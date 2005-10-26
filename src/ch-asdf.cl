@@ -191,7 +191,6 @@
 
 (defmethod perform ((op compile-op) (c gcc-xml-c-source-file))
   (print c)
-  (break)
   (unless
       (= 0 (run-shell-command "~A ~A -fxml=~A ~{-isystem ~A~^ ~} ~{-I~A~^ ~}"
                               gcc-xml-ffi::*gccxml-executable*
