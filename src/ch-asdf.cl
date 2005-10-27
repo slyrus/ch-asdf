@@ -196,6 +196,6 @@
                               gcc-xml-ffi::*gccxml-executable*
                               (ch-util:unix-name (component-pathname c))
                               (ch-util:unix-name (car (output-files op c)))
-                              (system-include-directories c)
-                              (include-directories c)))
+                              (mapcar #'unix-name (system-include-directories c))
+                              (mapcar #'unix-name (include-directories c))))
     (error 'operation-error :operation op :component c)))
