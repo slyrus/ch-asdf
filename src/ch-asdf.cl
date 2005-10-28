@@ -37,7 +37,9 @@
 (defclass unix-dso (module)
   ((dso-name :accessor dso-name :initarg :dso-name)
    (dso-directory :accessor dso-directory :initarg :dso-directory)
-   (include-directories :accessor include-directories :initarg :include-directories)
+   (include-directories :accessor include-directories :initarg :include-directories :initform nil)
+   (link-library-directories :accessor link-library-directories :initarg :link-library-directories :initform nil)
+   (link-libraries :accessor link-libraries :initarg :link-libraries :initform nil)
    (dso-type :accessor dso-type :initarg :dso-type :initform
              ;; fill appropriate OS specific types in here
              #+darwin "so"
@@ -77,9 +79,11 @@
                            ;; e.g. :components (... (:unix-library "R" :library-directory *r-dir*))
 			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
 			   " "
-			   #+sunos "-shared -lresolv -lsocket -lnsl"
-			   #+darwin "-bundle"
-			   #-(or darwin sunos) "-shared")
+                           (format nil " ~{-L~A~^ ~} " (link-library-directories dso))
+                           (format nil " ~{-l~A~^ ~} " (link-libraries dso))
+			   #+sunos " -shared -lresolv -lsocket -lnsl "
+			   #+darwin " -bundle "
+			   #-(or darwin sunos) " -shared ")
 	      dso-name
 	      (mapcar #'unix-name
 		      (mapcan (lambda (c)
@@ -108,14 +112,21 @@
   
 (defmethod perform ((op compile-op) (c c-source-file))
   (unless
-      (= 0 (run-shell-command "gcc ~A -o ~S -c ~S"
-			      (concatenate
-			       'string
-                               (format nil "~{-I~A~^ ~}" (get-include-directories c))
-			       " " (sb-ext:posix-getenv "EXTRA_CFLAGS")
-			       " " "-fPIC")
-			      (unix-name (car (output-files op c)))
-			      (unix-name (component-pathname c))))
+      (= 0 (run-shell-command
+            (concatenate 'string
+                         (format nil "gcc ~A -o ~S -c ~S"
+                                 (concatenate
+                                  'string
+                                  (format nil "~{-I~A~^ ~}" (get-include-directories c))
+                                  " " (sb-ext:posix-getenv "EXTRA_CFLAGS")
+                                  " " "-fPIC"
+                                  (format nil "~{-L~A~^ ~}" (link-library-directories c))
+                                  (format nil "~{-l~A~^ ~}" (link-libraries c))
+                                  (format nil " ~{-isystem ~A~^ ~} ~{-I~A~^ ~} "
+                                          (mapcar #'unix-name (system-include-directories c))
+                                          (mapcar #'unix-name (include-directories c))))
+                                 (unix-name (car (output-files op c)))
+                                 (unix-name (component-pathname c))))))
     (error 'operation-error :operation op :component c)))
 
 (defmethod perform ((o load-op) (c unix-dso))
@@ -189,13 +200,27 @@
 (defmethod system-include-directories ((c component))
   nil)
 
+(defgeneric link-library-directories (component))
+(defmethod link-library-directories ((c component))
+  nil)
+
+(defgeneric link-libraries (component))
+(defmethod link-libraries ((c component))
+  nil)
+
+
 (defmethod perform ((op compile-op) (c gcc-xml-c-source-file))
   (print c)
   (unless
-      (= 0 (run-shell-command "~A ~A -fxml=~A ~{-isystem ~A~^ ~} ~{-I~A~^ ~}"
-                              gcc-xml-ffi::*gccxml-executable*
-                              (ch-util:unix-name (component-pathname c))
-                              (ch-util:unix-name (car (output-files op c)))
-                              (mapcar #'unix-name (system-include-directories c))
-                              (mapcar #'unix-name (include-directories c))))
+      (= 0 (run-shell-command
+            (concatenate 'string 
+                         (format nil "~A ~A -fxml=~A "
+                                 gcc-xml-ffi::*gccxml-executable*
+                                 (ch-util:unix-name (component-pathname c))
+                                 (ch-util:unix-name (car (output-files op c))))
+                         (format nil "~{-L~A~^ ~}" (link-library-directories c))
+                         (format nil "~{-l~A~^ ~}" (link-libraries c))
+                         (format nil " ~{-isystem ~A~^ ~} ~{-I~A~^ ~} "
+                                 (mapcar #'unix-name (system-include-directories c))
+                                 (mapcar #'unix-name (include-directories c))))))
     (error 'operation-error :operation op :component c)))
