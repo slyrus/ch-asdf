@@ -1,5 +1,5 @@
 
-(In-package :ch-asdf)
+(in-package :ch-asdf)
 
 (defclass clean-op (operation) ())
 
