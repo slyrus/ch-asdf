@@ -80,6 +80,7 @@
 			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
 			   " "
                            (format nil " ~{-L~A~^ ~} " (link-library-directories dso))
+                           (format nil " ~{-Xlinker -rpath -Xlinker ~A~^ ~} " (link-library-directories dso))
                            (format nil " ~{-l~A~^ ~} " (link-libraries dso))
 			   #+sunos " -shared -lresolv -lsocket -lnsl "
 			   #+darwin " -bundle "
