@@ -25,7 +25,7 @@
 (defsystem #:ch-asdf
   :name "ch-asdf"
   :author "Cyrus Harmon <ch-lisp@bobobeach.com>"
-  :version "0.1.0-20051024"
+  :version "0.1.0-20051115"
   :depends-on (:ch-util :gcc-xml-ffi)
   :licence "BSD"
   :description "ASDF Extensions from Cyrus Harmon"
