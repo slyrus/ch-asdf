@@ -127,3 +127,24 @@
       #+cmu (ext:load-foreign filename)
       #+sbcl (sb-alien:load-shared-object filename))))
 
+
+;;; generated source files
+
+(defclass generated-source-file (source-file) ())
+(defmethod operation-done-p ((o operation) (c generated-source-file))
+  (let ((in-files (input-files o c)))
+    (if in-files
+        (and (every #'probe-file in-files)
+             (call-next-method))
+        (call-next-method))))
+
+;;; pdf files
+
+(defclass pdf-file (source-file) ())
+(defmethod source-file-type ((c pdf-file) (s module)) "pdf")
+
+;;; xhtml files
+
+(defclass xhtml-file (html-file) ())
+(defmethod source-file-type ((c xhtml-file) (s module)) "xhtml")
+

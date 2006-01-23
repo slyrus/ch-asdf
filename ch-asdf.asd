@@ -33,7 +33,10 @@
   ((:module :src
 	    :components
 	    ((:ch-asdf-cl-source-file "defpackage")
-	     (:ch-asdf-cl-source-file "asdf-util" :depends-on ("defpackage"))
-	     (:ch-asdf-cl-source-file "ch-asdf" :depends-on ("defpackage" "asdf-util"))
-	     (:ch-asdf-cl-source-file "gcc-xml" :depends-on ("defpackage" "ch-asdf"))))))
+	     (:ch-asdf-cl-source-file "asdf-util"
+                                      :depends-on ("defpackage"))
+	     (:ch-asdf-cl-source-file "ch-asdf"
+                                      :depends-on ("defpackage" "asdf-util"))
+	     (:ch-asdf-cl-source-file "gcc-xml"
+                                      :depends-on ("defpackage" "ch-asdf"))))))
 

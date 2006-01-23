@@ -28,3 +28,10 @@
                               (eql scheme :asdf))
                           (puri:uri-parsed-path uri))
                  (asdf-lookup (cdr (puri:uri-parsed-path uri))))))))))
+
+(defmacro with-component-directory ((component) &body body)
+  `(ch-util::with-current-directory
+       (make-pathname
+        :directory (pathname-directory
+                    (component-pathname ,component)))
+     ,@body))
