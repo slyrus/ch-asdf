@@ -26,12 +26,14 @@
   :name "ch-asdf"
   :author "Cyrus Harmon <ch-lisp@bobobeach.com>"
   :version "0.1.0-20051115"
-  :depends-on (:ch-util :gcc-xml-ffi)
+  :depends-on (:ch-util :gcc-xml-ffi :puri)
   :licence "BSD"
   :description "ASDF Extensions from Cyrus Harmon"
   :components
   ((:module :src
 	    :components
 	    ((:ch-asdf-cl-source-file "defpackage")
-	     (:ch-asdf-cl-source-file "ch-asdf" :depends-on ("defpackage"))))))
+	     (:ch-asdf-cl-source-file "asdf-util" :depends-on ("defpackage"))
+	     (:ch-asdf-cl-source-file "ch-asdf" :depends-on ("defpackage" "asdf-util"))
+	     (:ch-asdf-cl-source-file "gcc-xml" :depends-on ("defpackage" "ch-asdf"))))))
 
