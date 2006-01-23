@@ -7,6 +7,7 @@
 
            #:unix-name
            #:absolute-path-p
+           #:asdf-lookup
 
            #:unix-dso
            #:dso-type
