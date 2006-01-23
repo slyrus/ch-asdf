@@ -21,6 +21,8 @@
            #:gcc-xml-xml-file
            #:gcc-xml-cl-source-file
 
+           #:jpeg-file
+           #:tiff-file
            #:generated-source-file
            #:pdf-file
            #:xhtml-file

@@ -148,3 +148,13 @@
 (defclass xhtml-file (html-file) ())
 (defmethod source-file-type ((c xhtml-file) (s module)) "xhtml")
 
+;;; tiff files
+
+(defclass tiff-file (static-file) ())
+(defmethod source-file-type ((c tiff-file) (s module)) "tiff")
+
+;;; jpeg files
+
+(defclass jpeg-file (static-file) ())
+(defmethod source-file-type ((c jpeg-file) (s module)) "jpg")
+
