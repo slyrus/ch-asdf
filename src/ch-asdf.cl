@@ -158,3 +158,13 @@
 (defclass jpeg-file (static-file) ())
 (defmethod source-file-type ((c jpeg-file) (s module)) "jpg")
 
+;;; markup files
+
+(defclass markup-file (source-file) ())
+(defmethod source-file-type ((c markup-file) (s module)) "gmarkup")
+
+(defclass markup-latex-file (generated-source-file) ())
+(defmethod source-file-type ((c markup-latex-file) (s module)) "tex")
+
+(defclass markup-pdf-file (pdf-file generated-source-file) ())
+(defclass markup-xhtml-file (xhtml-file) ())

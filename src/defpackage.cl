@@ -27,5 +27,10 @@
            #:pdf-file
            #:xhtml-file
 
+           #:markup-file
+           #:markup-latex-file
+           #:markup-pdf-file
+           #:markup-xhtml-file
+
            ))
 
