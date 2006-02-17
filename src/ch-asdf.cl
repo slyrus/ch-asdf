@@ -158,6 +158,11 @@
 (defclass jpeg-file (static-file) ())
 (defmethod source-file-type ((c jpeg-file) (s module)) "jpg")
 
+;;; png files
+
+(defclass png-file (static-file) ())
+(defmethod source-file-type ((c png-file) (s module)) "png")
+
 ;;; markup files
 
 (defclass markup-file (source-file) ())

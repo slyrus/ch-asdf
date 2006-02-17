@@ -8,6 +8,7 @@
            #:unix-name
            #:absolute-path-p
            #:asdf-lookup
+           #:asdf-lookup-path
            #:with-component-directory
 
            #:unix-dso
@@ -22,6 +23,7 @@
            #:gcc-xml-cl-source-file
 
            #:jpeg-file
+           #:png-file
            #:tiff-file
            #:generated-source-file
            #:pdf-file

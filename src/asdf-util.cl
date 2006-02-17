@@ -29,6 +29,9 @@
                           (puri:uri-parsed-path uri))
                  (asdf-lookup (cdr (puri:uri-parsed-path uri))))))))))
 
+(defun asdf-lookup-path (path)
+  (component-pathname (asdf-lookup path)))
+
 (defmacro with-component-directory ((component) &body body)
   `(ch-util::with-current-directory
        (make-pathname
