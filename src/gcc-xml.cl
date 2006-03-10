@@ -96,3 +96,5 @@
                                  (mapcar #'unix-name (include-directories c))))))
     (error 'operation-error :operation op :component c)))
 
+(defmethod perform ((op load-op) (c gcc-xml-c-source-file))
+  )
