@@ -71,6 +71,7 @@
 			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
 			   " "
                            (format nil " ~{-L~A~^ ~} " (link-library-directories dso))
+                           #-darwin
                            (format nil " ~{-Xlinker -rpath -Xlinker ~A~^ ~} " (link-library-directories dso))
                            (format nil " ~{-l~A~^ ~} " (link-libraries dso))
 			   #+sunos " -shared -lresolv -lsocket -lnsl "
@@ -89,7 +90,6 @@
   (list 
    (make-pathname :type "o" :defaults
 		  (component-pathname c))))
-
 
 (defgeneric get-include-directories (c))
 
@@ -121,6 +121,8 @@
                                  (unix-name (component-pathname c))))))
     (error 'operation-error :operation op :component c)))
 
+(defmethod perform ((op load-op) (c c-source-file)))
+
 (defmethod perform ((o load-op) (c unix-dso))
   (let ((co (make-instance 'compile-op)))
     (let ((filename (car (output-files co c))))
@@ -130,7 +132,9 @@
 
 ;;; generated source files
 
-(defclass generated-source-file (source-file) ())
+(defclass generated-file (static-file) ())
+
+(defclass generated-source-file (generated-file source-file) ())
 (defmethod operation-done-p ((o operation) (c generated-source-file))
   (let ((in-files (input-files o c)))
     (if in-files

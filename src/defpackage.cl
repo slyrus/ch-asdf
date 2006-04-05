@@ -25,7 +25,10 @@
            #:jpeg-file
            #:png-file
            #:tiff-file
+
+           #:generated-file
            #:generated-source-file
+
            #:pdf-file
            #:xhtml-file
 
