@@ -25,18 +25,22 @@
 (defsystem #:ch-asdf
   :name "ch-asdf"
   :author "Cyrus Harmon <ch-lisp@bobobeach.com>"
-  :version "0.1.0-20051115"
+  :version #.(with-open-file
+                 (vers (merge-pathnames "version.lisp-expr" *load-truename*))
+               (read vers))
   :depends-on (:ch-util :gcc-xml-ffi :puri)
   :licence "BSD"
   :description "ASDF Extensions from Cyrus Harmon"
   :components
-  ((:module :src
-	    :components
-	    ((:ch-asdf-cl-source-file "defpackage")
-	     (:ch-asdf-cl-source-file "asdf-util"
-                                      :depends-on ("defpackage"))
-	     (:ch-asdf-cl-source-file "ch-asdf"
-                                      :depends-on ("defpackage" "asdf-util"))
-	     (:ch-asdf-cl-source-file "gcc-xml"
-                                      :depends-on ("defpackage" "ch-asdf"))))))
+  ((:static-file "version" :pathname #p"version.lisp-expr")
+   (:module
+    :src
+    :components
+    ((:ch-asdf-cl-source-file "defpackage")
+     (:ch-asdf-cl-source-file "asdf-util"
+                              :depends-on ("defpackage"))
+     (:ch-asdf-cl-source-file "ch-asdf"
+                              :depends-on ("defpackage" "asdf-util"))
+     (:ch-asdf-cl-source-file "gcc-xml"
+                              :depends-on ("defpackage" "ch-asdf"))))))
 
