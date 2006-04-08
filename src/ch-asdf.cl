@@ -147,6 +147,11 @@
 (defclass pdf-file (source-file) ())
 (defmethod source-file-type ((c pdf-file) (s module)) "pdf")
 
+;;; css files
+
+(defclass css-file (static-file) ())
+(defmethod source-file-type ((c css-file) (s module)) "css")
+
 ;;; xhtml files
 
 (defclass xhtml-file (html-file) ())
@@ -177,3 +182,7 @@
 
 (defclass markup-pdf-file (pdf-file generated-source-file) ())
 (defclass markup-xhtml-file (xhtml-file) ())
+
+;;; tinaa documentation
+
+(defclass tinaa-directory (module) ())

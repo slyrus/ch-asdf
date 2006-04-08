@@ -30,6 +30,7 @@
            #:generated-source-file
 
            #:pdf-file
+           #:css-file
            #:xhtml-file
 
            #:markup-file
@@ -37,5 +38,6 @@
            #:markup-pdf-file
            #:markup-xhtml-file
 
+           #:tinaa-directory
            ))
 
