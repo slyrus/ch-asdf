@@ -22,6 +22,16 @@
 (defmethod output-files :around ((operation compile-op) (c ch-cl-source-file))
   (list (merge-pathnames *fasl-directory* (compile-file-pathname (component-pathname c)))))
 
+(defclass ch-lisp-source-file (cl-source-file) ())
+
+(defparameter *fasl-directory*
+  (make-pathname :directory '(:relative #+sbcl "sbcl-fasl"
+			      #+openmcl "openmcl-fasl"
+			      #-(or sbcl openmcl) "fasl")))
+
+(defmethod output-files :around ((operation compile-op) (c ch-lisp-source-file))
+  (list (merge-pathnames *fasl-directory* (compile-file-pathname (component-pathname c)))))
+
 ;;;; C source file compilation section
 ;;;; ripped from sb-posix.asd in the sbcl source code
 
@@ -132,15 +142,21 @@
 
 ;;; generated source files
 
-(defclass generated-file (static-file) ())
+(defclass generated-file (source-file) ())
 
-(defclass generated-source-file (generated-file source-file) ())
+(defclass generated-source-file (generated-file) ())
 (defmethod operation-done-p ((o operation) (c generated-source-file))
   (let ((in-files (input-files o c)))
     (if in-files
         (and (every #'probe-file in-files)
              (call-next-method))
         (call-next-method))))
+
+(defmethod source-file-type ((c generated-file) (s module)) "")
+
+(defmethod perform ((op compile-op) (c generated-file)))
+
+(defmethod perform ((op load-op) (c generated-file)))
 
 ;;; pdf files
 
@@ -186,3 +202,99 @@
 ;;; tinaa documentation
 
 (defclass tinaa-directory (module) ())
+
+;;; Need a generic ASDF object that reads a file and associates an
+;;; in-memory object with the file. It should cache the creation date
+;;; of the object and reload the object if the modification date of
+;;; the file is newer than the creation date of the in-memory object.
+
+(defclass object-component (source-file)
+  ((symbol :accessor object-symbol :initarg :symbol)))
+
+(defmethod source-file-type ((c object-component) (s module)) nil)
+
+(defun make-symbol-from-name (name)
+  (intern (string (read-from-string name))))
+
+(defmethod shared-initialize :after ((c object-component) slot-names
+                                     &key force
+                                     &allow-other-keys)
+  (declare (ignore force))
+  (when (slot-boundp c 'asdf::name)
+    (unless (slot-boundp c 'symbol)
+      (setf (object-symbol c)
+            (make-symbol-from-name (asdf::component-name c))))))
+
+(defmethod perform ((op compile-op) (c object-component)))
+(defmethod perform ((op load-op) (c object-component))
+  (setf (component-property c 'last-loaded)
+        (get-universal-time)))
+
+;;; An object-from-file is the file-based representation of an object. The
+;;; load-op 
+(defclass object-from-file (object-component)
+  ((load-date :accessor object-load-date :initarg :load-date)))
+
+(defmethod perform ((op compile-op) (c object-from-file)))
+
+(defmethod perform ((op load-op) (c object-from-file))
+  (with-open-file (input-stream (component-pathname c))
+    (setf (symbol-value (object-symbol c))
+          (read input-stream)))
+  (call-next-method))
+
+(defclass object-to-file (object-component)
+  ((write-date :accessor object-write-date :initarg :write-date)))
+
+
+
+(defclass object-from-variable (ch-asdf:object-component)
+  ((input-object :accessor object-input-object :initarg :input-object)))
+
+(defmethod operation-done-p ((o compile-op) (c object-from-variable))
+  t)
+(defmethod operation-done-p ((o load-op) (c object-from-variable))
+  (let ((input-object-last-load-time
+         (asdf::component-property
+          (find-component (component-parent c)
+                          (asdf::coerce-name (object-input-object c)))
+          'ch-asdf::last-loaded))
+        (my-last-load-time (asdf::component-property c 'ch-asdf::last-loaded)))
+    (and input-object-last-load-time
+         my-last-load-time
+         (> my-last-load-time input-object-last-load-time))))
+
+(defmethod perform ((op compile-op) (c object-from-variable)))
+(defmethod perform ((op load-op) (c object-from-variable))
+  (let ((sexp
+         (symbol-value
+          (ch-asdf::object-symbol
+           (find-component (component-parent c)
+                           (asdf::coerce-name (object-input-object c)))))))
+    (setf (symbol-value (ch-asdf::object-symbol c)) sexp))
+  (call-next-method))
+
+
+;;; quote macro reader
+
+(defun get-delimiter (char)
+  (case char
+    (#\{ #\})
+    (#\( #\))
+    (#\[ #\])
+    (#\< #\>)
+    (t char)))
+
+(defun enable-quote-reader-macro ()
+  (set-dispatch-macro-character #\# #\q 
+                                #'(lambda (in c n)
+                                    (declare (ignore c n))
+                                    (let ((delimiter (get-delimiter (read-char in))))
+                                      (let ((string (make-array '(0) :element-type 'character
+                                                                :fill-pointer 0 :adjustable t)))
+                                        (with-output-to-string (string-stream string)
+                                          (loop for char = (read-char in nil)
+                                             while (and char (not (char-equal char delimiter)))
+                                             do
+                                             (princ char string-stream)))
+                                        string)))))
