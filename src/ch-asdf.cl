@@ -208,6 +208,10 @@
 ;;; of the object and reload the object if the modification date of
 ;;; the file is newer than the creation date of the in-memory object.
 
+(defun get-sibling-component (comp sib)
+  (asdf:find-component (asdf:component-parent comp)
+                       (asdf::coerce-name sib)))
+
 (defclass object-component (source-file)
   ((symbol :accessor object-symbol :initarg :symbol)))
 
@@ -230,6 +234,16 @@
   (setf (component-property c 'last-loaded)
         (get-universal-time)))
 
+(defmethod operation-done-p ((o compile-op) (c object-component))
+  t)
+(defmethod operation-done-p ((o load-op) (comp object-component))
+  (every #'identity
+         (loop for (dep-op dep-comp) in
+              (asdf::component-depends-on op comp)
+            collect (asdf::operation-done-p
+                     (make-instance dep-op)
+                     (get-sibling-component comp dep-comp)))))
+
 ;;; An object-from-file is the file-based representation of an object. The
 ;;; load-op 
 (defclass object-from-file (object-component)
@@ -238,17 +252,28 @@
 (defmethod perform ((op compile-op) (c object-from-file)))
 
 (defmethod perform ((op load-op) (c object-from-file))
+  (break)
   (with-open-file (input-stream (component-pathname c))
     (setf (symbol-value (object-symbol c))
           (read input-stream)))
+  (setf (asdf::component-property c 'last-loaded)
+        (get-universal-time))
   (call-next-method))
+
+;;; this needs to check the file date!!!!
+(defmethod operation-done-p ((o load-op) (c object-from-file))
+  (let ((on-disk-time
+         (file-write-date (component-pathname c)))
+        (my-last-load-time (asdf::component-property c 'last-loaded)))
+    (and on-disk-time
+         my-last-load-time
+         (> my-last-load-time on-disk-time))))
 
 (defclass object-to-file (object-component)
   ((write-date :accessor object-write-date :initarg :write-date)))
 
 
-
-(defclass object-from-variable (ch-asdf:object-component)
+(defclass object-from-variable (object-component)
   ((input-object :accessor object-input-object :initarg :input-object)))
 
 (defmethod operation-done-p ((o compile-op) (c object-from-variable))
@@ -258,8 +283,8 @@
          (asdf::component-property
           (find-component (component-parent c)
                           (asdf::coerce-name (object-input-object c)))
-          'ch-asdf::last-loaded))
-        (my-last-load-time (asdf::component-property c 'ch-asdf::last-loaded)))
+          'last-loaded))
+        (my-last-load-time (asdf::component-property c 'last-loaded)))
     (and input-object-last-load-time
          my-last-load-time
          (> my-last-load-time input-object-last-load-time))))
@@ -268,33 +293,9 @@
 (defmethod perform ((op load-op) (c object-from-variable))
   (let ((sexp
          (symbol-value
-          (ch-asdf::object-symbol
+          (object-symbol
            (find-component (component-parent c)
                            (asdf::coerce-name (object-input-object c)))))))
-    (setf (symbol-value (ch-asdf::object-symbol c)) sexp))
+    (setf (symbol-value (object-symbol c)) sexp))
   (call-next-method))
 
-
-;;; quote macro reader
-
-(defun get-delimiter (char)
-  (case char
-    (#\{ #\})
-    (#\( #\))
-    (#\[ #\])
-    (#\< #\>)
-    (t char)))
-
-(defun enable-quote-reader-macro ()
-  (set-dispatch-macro-character #\# #\q 
-                                #'(lambda (in c n)
-                                    (declare (ignore c n))
-                                    (let ((delimiter (get-delimiter (read-char in))))
-                                      (let ((string (make-array '(0) :element-type 'character
-                                                                :fill-pointer 0 :adjustable t)))
-                                        (with-output-to-string (string-stream string)
-                                          (loop for char = (read-char in nil)
-                                             while (and char (not (char-equal char delimiter)))
-                                             do
-                                             (princ char string-stream)))
-                                        string)))))
