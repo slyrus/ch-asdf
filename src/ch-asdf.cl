@@ -160,6 +160,10 @@
   (append (call-next-method)
           `((generate-op ,(component-name c)))))
 
+(defmethod component-depends-on ((op load-op) (c generated-component))
+  (append (call-next-method)
+          `((generate-op ,(component-name c)))))
+
 
 (defmethod perform :before ((operation generate-op) (c generated-component))
   (map nil #'ensure-directories-exist (output-files operation c)))
@@ -203,6 +207,9 @@
 
 (defmethod perform ((operation load-op) (c pdf-file))
   (ch-util::app-open (ch-util::unix-name (component-pathname c))))
+
+(defmethod operation-done-p ((o load-op) (c pdf-file))
+  nil)
 
 
 ;;; css files
@@ -294,15 +301,17 @@
 (defclass object-from-file (object-component source-file)
   ((load-date :accessor object-load-date :initarg :load-date)))
 
-(defmethod perform ((op compile-op) (c object-from-file)))
-
-(defmethod perform ((op generate-op) (c object-from-file))
+(defmethod perform ((op compile-op) (c object-from-file))
+  (setf (asdf:component-property c 'last-compiled)
+        (get-universal-time))
   (with-open-file (input-stream (component-pathname c))
     (setf (symbol-value (object-symbol c))
           (read input-stream)))
-  (setf (asdf::component-property c 'last-loaded)
-        (get-universal-time))
   (call-next-method))
+
+(defmethod perform ((op generate-op) (c object-from-file))
+  (setf (asdf::component-property c 'last-generated)
+        (get-universal-time)))
 
 ;;; this needs to check the file date!!!!
 (defmethod operation-done-p ((o generate-op) (c object-from-file))
@@ -311,7 +320,8 @@
         (my-last-load-time (asdf::component-property c 'last-loaded)))
     (and on-disk-time
          my-last-load-time
-         (> my-last-load-time on-disk-time))))
+         (>= my-last-load-time on-disk-time))))
+
 
 (defclass object-to-file (object-component)
   ((write-date :accessor object-write-date :initarg :write-date)))
@@ -320,31 +330,55 @@
 (defclass object-from-variable (object-component)
   ((input-object :accessor object-input-object :initarg :input-object)))
 
+(defmethod component-depends-on ((op generate-op) (c object-from-variable))
+  (append (call-next-method)
+          `((load-op , (asdf::coerce-name (object-input-object c))))))
+
+(defmethod component-depends-on ((op compile-op) (c object-from-variable))
+  (append (call-next-method)
+          `((load-op ,(asdf::coerce-name (object-input-object c))))))
+
 (defmethod operation-done-p ((o generate-op) (c object-from-variable))
   (let ((input-object-last-load-time
          (asdf::component-property
           (find-component (component-parent c)
                           (asdf::coerce-name (object-input-object c)))
           'last-loaded))
-        (my-last-load-time (asdf::component-property c 'last-loaded)))
+        (my-last-generate-time (asdf::component-property c 'last-generated)))
     (and input-object-last-load-time
-         my-last-load-time
-         (> my-last-load-time input-object-last-load-time))))
+         my-last-generate-time
+         (>= my-last-generate-time input-object-last-load-time))))
 
 (defmethod operation-done-p ((o compile-op) (c object-from-variable))
-  t)
+  (let ((my-last-generate-time (asdf::component-property c 'last-generated))
+        (my-last-compile-time (asdf::component-property c 'last-compiled)))
+    (and my-last-generate-time
+         my-last-compile-time
+         (>= my-last-compile-time my-last-generate-time))))
 
 (defmethod operation-done-p ((o load-op) (c object-from-variable))
-  t)
+  (let ((my-last-compile-time (asdf::component-property c 'last-compiled))
+        (my-last-load-time (asdf::component-property c 'last-loaded)))
+    (and my-last-compile-time
+         my-last-load-time
+         (>= my-last-load-time my-last-compile-time))))
 
 (defmethod perform ((op generate-op) (c object-from-variable))
+  (setf (asdf:component-property c 'last-generated)
+        (get-universal-time))
   (let ((sexp
-         (symbol-value
-          (object-symbol
-           (find-component (component-parent c)
-                           (asdf::coerce-name (object-input-object c)))))))
-    (setf (symbol-value (object-symbol c)) sexp)))
+       (symbol-value
+        (object-symbol
+         (find-component (component-parent c)
+                         (asdf::coerce-name (object-input-object c)))))))
+  (setf (symbol-value (object-symbol c)) sexp)))
 
-(defmethod perform ((op compile-op) (c object-from-variable)))
 
-(defmethod perform ((op load-op) (c object-from-variable)))
+(defmethod perform ((op compile-op) (c object-from-variable))
+  (setf (asdf:component-property c 'last-compiled)
+        (get-universal-time)))
+
+(defmethod perform ((op load-op) (c object-from-variable))
+    (setf (asdf:component-property c 'last-loaded)
+        (get-universal-time)))
+
