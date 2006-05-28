@@ -140,11 +140,47 @@
       #+sbcl (sb-alien:load-shared-object filename))))
 
 
-;;; generated source files
+;;;; ASDF hackery for generating components, generated source files
+;;;; and other neat stuff.
 
-(defclass generated-file (source-file) ())
+;;;
+;;; generate-op
+(defclass generate-op (asdf:operation) ())
+
+;;;
+;;; generated-component for components that generate files
+(defclass generated-component (asdf:component) ())
+
+
+(defmethod perform ((op generate-op) (c component)))
+
+(defmethod perform ((op generate-op) (c generated-component)))
+
+(defmethod component-depends-on ((op compile-op) (c generated-component))
+  (append (call-next-method)
+          `((generate-op ,(component-name c)))))
+
+
+(defmethod perform :before ((operation generate-op) (c generated-component))
+  (map nil #'ensure-directories-exist (output-files operation c)))
+
+;;;
+;;; generated-file - not all components will have files associated
+;;; with them. for those that do, use this subclass of
+;;; generated-component.
+(defclass generated-file (generated-component source-file) ())
+
+(defmethod asdf::component-relative-pathname ((component generated-file))
+  (let ((relative-pathname (slot-value component 'asdf::relative-pathname)))
+    (if relative-pathname
+        relative-pathname
+        (let ((*default-pathname-defaults*
+               (asdf::component-parent-pathname component)))
+          (make-pathname
+           :name (component-name component))))))
 
 (defclass generated-source-file (generated-file) ())
+
 (defmethod operation-done-p ((o operation) (c generated-source-file))
   (let ((in-files (input-files o c)))
     (if in-files
@@ -162,6 +198,12 @@
 
 (defclass pdf-file (source-file) ())
 (defmethod source-file-type ((c pdf-file) (s module)) "pdf")
+
+(defmethod perform ((operation compile-op) (c pdf-file)))
+
+(defmethod perform ((operation load-op) (c pdf-file))
+  (ch-util::app-open (ch-util::unix-name (component-pathname c))))
+
 
 ;;; css files
 
@@ -212,8 +254,11 @@
   (asdf:find-component (asdf:component-parent comp)
                        (asdf::coerce-name sib)))
 
-(defclass object-component (source-file)
+(defclass object-component (generated-component)
   ((symbol :accessor object-symbol :initarg :symbol)))
+
+(defmethod operation-done-p ((o generate-op) (c object-component))
+  t)
 
 (defmethod source-file-type ((c object-component) (s module)) nil)
 
@@ -239,20 +284,19 @@
 (defmethod operation-done-p ((o load-op) (comp object-component))
   (every #'identity
          (loop for (dep-op dep-comp) in
-              (asdf::component-depends-on op comp)
+              (asdf::component-depends-on o comp)
             collect (asdf::operation-done-p
                      (make-instance dep-op)
                      (get-sibling-component comp dep-comp)))))
 
 ;;; An object-from-file is the file-based representation of an object. The
 ;;; load-op 
-(defclass object-from-file (object-component)
+(defclass object-from-file (object-component source-file)
   ((load-date :accessor object-load-date :initarg :load-date)))
 
 (defmethod perform ((op compile-op) (c object-from-file)))
 
-(defmethod perform ((op load-op) (c object-from-file))
-  (break)
+(defmethod perform ((op generate-op) (c object-from-file))
   (with-open-file (input-stream (component-pathname c))
     (setf (symbol-value (object-symbol c))
           (read input-stream)))
@@ -261,7 +305,7 @@
   (call-next-method))
 
 ;;; this needs to check the file date!!!!
-(defmethod operation-done-p ((o load-op) (c object-from-file))
+(defmethod operation-done-p ((o generate-op) (c object-from-file))
   (let ((on-disk-time
          (file-write-date (component-pathname c)))
         (my-last-load-time (asdf::component-property c 'last-loaded)))
@@ -276,9 +320,7 @@
 (defclass object-from-variable (object-component)
   ((input-object :accessor object-input-object :initarg :input-object)))
 
-(defmethod operation-done-p ((o compile-op) (c object-from-variable))
-  t)
-(defmethod operation-done-p ((o load-op) (c object-from-variable))
+(defmethod operation-done-p ((o generate-op) (c object-from-variable))
   (let ((input-object-last-load-time
          (asdf::component-property
           (find-component (component-parent c)
@@ -289,13 +331,20 @@
          my-last-load-time
          (> my-last-load-time input-object-last-load-time))))
 
-(defmethod perform ((op compile-op) (c object-from-variable)))
-(defmethod perform ((op load-op) (c object-from-variable))
+(defmethod operation-done-p ((o compile-op) (c object-from-variable))
+  t)
+
+(defmethod operation-done-p ((o load-op) (c object-from-variable))
+  t)
+
+(defmethod perform ((op generate-op) (c object-from-variable))
   (let ((sexp
          (symbol-value
           (object-symbol
            (find-component (component-parent c)
                            (asdf::coerce-name (object-input-object c)))))))
-    (setf (symbol-value (object-symbol c)) sexp))
-  (call-next-method))
+    (setf (symbol-value (object-symbol c)) sexp)))
 
+(defmethod perform ((op compile-op) (c object-from-variable)))
+
+(defmethod perform ((op load-op) (c object-from-variable)))
