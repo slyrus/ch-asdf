@@ -4,13 +4,16 @@
 (defpackage #:ch-asdf
   (:use #:cl #:asdf)
   (:export #:ch-cl-source-file
-
+           #:ch-lisp-source-file
+     
            #:unix-name
            #:absolute-path-p
            #:asdf-lookup
            #:asdf-lookup-path
            #:with-component-directory
-
+           #:asdf-load
+           #:asdf-compile
+           
            #:unix-dso
            #:dso-type
            #:dso-name
@@ -39,5 +42,9 @@
            #:markup-xhtml-file
 
            #:tinaa-directory
-           ))
+
+           #:object-component
+           #:object-from-variable
+           #:object-from-file
+           #:object-to-file))
 

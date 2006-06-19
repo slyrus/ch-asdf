@@ -38,3 +38,14 @@
         :directory (pathname-directory
                     (component-pathname ,component)))
      ,@body))
+
+(flet ((asdf-op (op component) 
+         (typecase component
+           (string
+            (asdf:operate 'asdf:load-op (asdf-lookup component)))
+           (t (asdf:operate 'asdf:load-op component)))))
+  (defun asdf-load (component)
+    (asdf-op 'asdf:load-op component))
+  (defun asdf-compile (component)
+    (asdf-op 'asdf:compile-op component)))
+
