@@ -46,5 +46,7 @@
            #:object-component
            #:object-from-variable
            #:object-from-file
-           #:object-to-file))
+           #:object-to-file
+
+           #:graphviz-dot-file))
 

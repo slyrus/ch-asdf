@@ -393,3 +393,33 @@
 
 (defmethod perform ((op load-op) (component load-only-cl-source-file))
    (load (component-pathname component)))
+
+;;; graphviz dot-files
+
+(defparameter *dot-program* "dot")
+(defparameter *dot-program-path*
+  (let ((found (sb-ext:find-executable-in-search-path
+                *dot-program*)))
+    (unless found
+      (setf found 
+            #+darwin "/opt/local/bin/dot"
+            #-darwin "/usr/local/bin/dot"))
+    found))
+
+(defclass graphviz-dot-file (generated-source-file) ())
+
+(defmethod source-file-type ((c graphviz-dot-file) (s module)) "dot")
+
+(defmethod output-files ((operation compile-op) (c graphviz-dot-file))
+  (list
+   (merge-pathnames (make-pathname :type "png")
+                    (compile-file-pathname (component-pathname c)))))
+
+(defmethod perform ((op compile-op) (c graphviz-dot-file))
+  (ch-util::run-program
+   *dot-program-path*
+   (list "-Tpng"
+         (format nil "-o~A" (print (ch-asdf:unix-name (car (output-files op c)))))
+         (ch-asdf:unix-name (print (component-pathname c))))))
+
+
