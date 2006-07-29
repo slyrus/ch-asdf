@@ -10,6 +10,7 @@
            #:absolute-path-p
            #:asdf-lookup
            #:asdf-lookup-path
+           #:merge-asdf-path
            #:with-component-directory
            #:asdf-load
            #:asdf-compile

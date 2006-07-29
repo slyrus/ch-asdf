@@ -32,6 +32,9 @@
 (defun asdf-lookup-path (path)
   (component-pathname (asdf-lookup path)))
 
+(defun merge-asdf-path (name path)
+  (merge-pathnames name (asdf-lookup-path path)))
+
 (defmacro with-component-directory ((component) &body body)
   `(ch-util::with-current-directory
        (make-pathname
