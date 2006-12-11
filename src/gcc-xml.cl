@@ -1,5 +1,5 @@
 ;;
-;; file: asdf-util.cl
+;; file: gcc-xml.cl
 ;; author: cyrus harmon
 ;; package: ch-asdf
 ;;
@@ -97,4 +97,5 @@
     (error 'operation-error :operation op :component c)))
 
 (defmethod perform ((op load-op) (c gcc-xml-c-source-file))
-  )
+  nil)
+
