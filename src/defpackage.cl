@@ -22,10 +22,6 @@
            #:include-directories
            #:system-include-directories
            
-           #:gcc-xml-c-source-file
-           #:gcc-xml-xml-file
-           #:gcc-xml-cl-source-file
-
            #:jpeg-file
            #:png-file
            #:tiff-file
