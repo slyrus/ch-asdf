@@ -1,0 +1,120 @@
+2006-12-11  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* ch-asdf.asd, make-dist.sh, src/defpackage.cl, src/gcc-xml.cl, version.lisp-expr:
+	ch-asdf 0.2.1
+	 * removed gcc-xml-ffi stuff
+
+	* src/gcc-xml.cl: trivial changes
+
+2006-07-29  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/asdf-util.cl, src/defpackage.cl, version.lisp-expr:
+	ch-asdf 0.1.5-20060729
+	  * added and exported merge-asdf-path
+
+2006-07-06  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* make-dist.sh, src/ch-asdf.cl, src/defpackage.cl, version.lisp-expr:
+	ch-asdf 0.1.4-20060706
+	  * added graphviz dot file asdf support
+
+2006-06-19  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/asdf-util.cl, src/ch-asdf.cl, src/defpackage.cl, version.lisp-expr:
+	* made some stuff external
+	* Added the load-only lisp file stuff, currently unused, I think
+
+2006-05-28  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl:
+	* fixing object-from-variable dependency checking. needed to add load-op
+	  of input variable to the component-depends-on ops.
+
+	* src/ch-asdf.cl: adding new object based stuff
+
+2006-05-27  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl: asdf hackery for dealing with objects and what not
+
+2006-05-26  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl:
+	checking in quote-reader-macro stuff before I tweak it
+
+2006-04-08  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* version.lisp-expr, ch-asdf.asd: added version.lisp-expr stuff
+
+	* src/defpackage.cl, src/ch-asdf.cl:
+	 * add tinaa-directory and css-file
+	 * export them
+
+2006-04-05  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/defpackage.cl, src/ch-asdf.cl: Added generated file
+	Fix linker stuff to work on darwin/x86
+
+2006-03-10  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/gcc-xml.cl: Added empty load-op stubb for gcc-xml-c-source-file
+
+2006-02-17  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/defpackage.cl, src/ch-asdf.cl, src/asdf-util.cl:
+	* Added asdf-lookup-path
+	* Added png-file
+	# Exported asdf-lookup-path and png-file
+
+2006-01-25  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/defpackage.cl, src/ch-asdf.cl:
+	moved class defintions here from ch-asdf-markup
+
+2006-01-23  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/defpackage.cl, src/ch-asdf.cl: * added tiff and jpeg-file classes
+	* exported them
+
+	* src/defpackage.cl, src/ch-asdf.cl, src/asdf-util.cl, ch-asdf.asd:
+	* moved pdf and xhtml stuff up here.
+	* added with-component-directory
+
+	* src/gcc-xml.cl, src/defpackage.cl, src/ch-asdf.cl, src/asdf-util.cl:
+	* moved gcc-xml stuff to its own file
+	* movde some utility funcitons to asdf-util
+	* added asdf-lookup and made it exported
+
+	* ch-asdf.asd: * moved gcc-xml stuff into its own file
+	* moved some stuff into asdf-util
+	* added adsf URI parsing stuff
+
+2005-11-29  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* ch-asdf.asd: bumped version number date
+
+2005-11-18  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl: In-package -> in-package
+
+	* src/ch-asdf.cl:
+	added xlinger args for -rpath. might not need this under non-linux.
+
+2005-10-28  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl: * set some initial slot values in unix-dso to nil
+	* add link-library-directories and link-libraries functions
+	* add link-library-directories and link-libraries to dso build, .o
+	  builds, and gcc-xml builds
+	* add link-library-directories and link-libraries to .o builds
+
+2005-10-27  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl: moved unix-name calls into here
+
+2005-10-26  Cyrus Harmon  <cyrus@bobobeach.com>
+
+	* src/ch-asdf.cl: remove break
+
+	* ch-asdf.asd, src/ch-asdf.cl, src/defpackage.cl:
+	Added an asdf system to contain my asdf extensions
+
