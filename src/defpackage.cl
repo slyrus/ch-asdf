@@ -21,6 +21,8 @@
            #:dso-directory
            #:include-directories
            #:system-include-directories
+
+           #:unix-executable
            
            #:jpeg-file
            #:png-file

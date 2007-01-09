@@ -5,6 +5,8 @@
 
 (in-package :ch-asdf)
 
+(defparameter *c-compiler* "gcc")
+
 (defclass clean-op (operation) ())
 
 (defmethod perform ((operation clean-op) (c component))
@@ -73,7 +75,8 @@
   (let ((dso-name (unix-name (car (output-files operation dso)))))
     (unless (zerop
 	     (run-shell-command
-	      "gcc ~A -o ~S ~{~S ~}"
+	      "~A ~A -o ~S ~{~S ~}"
+              *c-compiler*
 	      (concatenate 'string
                            ;; This really should be specified as an initarg of the unix-dso
                            ;; rather than hard coded here!
@@ -94,6 +97,58 @@
 			      (module-components dso)))))
       (error 'operation-error :operation operation :component dso))))
 
+;;;; Unix executables
+;;;;
+(defclass unix-executable (module)
+  ((include-directories :accessor include-directories :initarg :include-directories :initform nil)
+   (link-library-directories :accessor link-library-directories :initarg :link-library-directories :initform nil)
+   (link-libraries :accessor link-libraries :initarg :link-libraries :initform nil)
+   (object-components :accessor object-components :initarg :object-components :initform nil)))
+
+(defmethod input-files ((operation compile-op) (executable unix-executable))
+  (declare (optimize (debug 3)))
+  (let ((files
+         (mapcan #'(lambda (obj)
+                     (output-files operation (get-sibling-component executable obj)))
+                 (object-components executable))))
+    (append (mapcar #'unix-name files)
+            (mapcar #'component-pathname (module-components executable)))))
+
+(defmethod output-files ((operation compile-op) (executable unix-executable))
+  (list (component-pathname executable)))
+
+#+nil
+(defmethod operation-done-p ((o compile-op) (c unix-executable))
+  nil)
+
+(defmethod perform :after ((operation compile-op) (executable unix-executable))
+  (let ((executable-name (unix-name (car (output-files operation executable)))))
+    (unless (zerop
+	     (run-shell-command
+	      "~A ~A -o ~S ~{~S ~}"
+              *c-compiler*
+	      (concatenate 'string
+                           ;; This really should be specified as an initarg of the unix-executable
+                           ;; rather than hard coded here!
+                           ;; e.g. :components (... (:unix-library "R" :library-directory *r-dir*))
+			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
+			   " "
+                           (format nil " ~{-L~A~^ ~} " (link-library-directories executable))
+                           #-darwin
+                           (format nil " ~{-Xlinker -rpath -Xlinker ~A~^ ~} " (link-library-directories executable))
+                           (format nil " ~{-l~A~^ ~} " (link-libraries executable))
+                           (format nil " ~{~A~^ ~} " (input-files operation executable)))
+	      executable-name
+              nil
+              #+nil
+	      (mapcar #'unix-name
+		      (mapcan (lambda (c)
+				(output-files operation c))
+			      (module-components executable)))))
+      (error 'operation-error :operation operation :component executable))))
+
+
+
 ;;; if this goes into the standard asdf, it could reasonably be extended
 ;;; to allow cflags to be set somehow
 (defmethod output-files ((op compile-op) (c c-source-file))
@@ -108,25 +163,27 @@
          (slot-exists-p (component-parent c) 'include-directories)
          (slot-boundp (component-parent c) 'include-directories))
     (mapcar
-     #'ch-util:unix-name
+     #'unix-name
      (include-directories
       (component-parent c)))))
-  
+
+;;;
+;;; removed this bit here:
+;;; 
+;;; #+nil "~{-isystem ~A~^ ~}"
+;;; #+nil (mapcar #'unix-name (system-include-directories c))
+
 (defmethod perform ((op compile-op) (c c-source-file))
   (unless
       (= 0 (run-shell-command
             (concatenate 'string
-                         (format nil "gcc ~A -o ~S -c ~S"
+                         (format nil "~A ~A -o ~S -c ~S"
+                                 *c-compiler*
                                  (concatenate
                                   'string
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
                                   " " (sb-ext:posix-getenv "EXTRA_CFLAGS")
-                                  " " "-fPIC"
-                                  (format nil "~{-L~A~^ ~}" (link-library-directories c))
-                                  (format nil "~{-l~A~^ ~}" (link-libraries c))
-                                  (format nil " ~{-isystem ~A~^ ~} ~{-I~A~^ ~} "
-                                          (mapcar #'unix-name (system-include-directories c))
-                                          (mapcar #'unix-name (include-directories c))))
+                                  " -fPIC")
                                  (unix-name (car (output-files op c)))
                                  (unix-name (component-pathname c))))))
     (error 'operation-error :operation op :component c)))
@@ -206,7 +263,7 @@
 (defmethod perform ((operation compile-op) (c pdf-file)))
 
 (defmethod perform ((operation load-op) (c pdf-file))
-  (ch-util::app-open (ch-util::unix-name (component-pathname c))))
+  (ch-util::app-open (unix-name (component-pathname c))))
 
 (defmethod operation-done-p ((o load-op) (c pdf-file))
   nil)
@@ -288,13 +345,14 @@
 
 (defmethod operation-done-p ((o compile-op) (c object-component))
   t)
+
 (defmethod operation-done-p ((o load-op) (comp object-component))
   (every #'identity
          (loop for (dep-op dep-comp) in
               (asdf::component-depends-on o comp)
-            collect (asdf::operation-done-p
-                     (make-instance dep-op)
-                     (get-sibling-component comp dep-comp)))))
+              collect (asdf::operation-done-p
+                       (make-instance dep-op)
+                       (get-sibling-component comp dep-comp)))))
 
 ;;; An object-from-file is the file-based representation of an object. The
 ;;; load-op 
@@ -416,7 +474,7 @@
                     (compile-file-pathname (component-pathname c)))))
 
 (defmethod perform ((op compile-op) (c graphviz-dot-file))
-  (ch-util::run-program
+  (run-shell-command
    *dot-program-path*
    (list "-Tpng"
          (format nil "-o~A" (print (ch-asdf:unix-name (car (output-files op c)))))
