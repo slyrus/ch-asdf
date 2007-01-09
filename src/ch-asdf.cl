@@ -103,14 +103,14 @@
   ((include-directories :accessor include-directories :initarg :include-directories :initform nil)
    (link-library-directories :accessor link-library-directories :initarg :link-library-directories :initform nil)
    (link-libraries :accessor link-libraries :initarg :link-libraries :initform nil)
-   (object-components :accessor object-components :initarg :object-components :initform nil)))
+   (source-files :accessor source-files :initarg :source-files :initform nil)))
 
 (defmethod input-files ((operation compile-op) (executable unix-executable))
   (declare (optimize (debug 3)))
   (let ((files
          (mapcan #'(lambda (obj)
                      (output-files operation (get-sibling-component executable obj)))
-                 (object-components executable))))
+                 (source-files executable))))
     (append (mapcar #'unix-name files)
             (mapcar #'component-pathname (module-components executable)))))
 
