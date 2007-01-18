@@ -475,9 +475,11 @@
 
 (defmethod perform ((op compile-op) (c graphviz-dot-file))
   (run-shell-command
+   "~A ~A -o~A ~A"
    *dot-program-path*
-   (list "-Tpng"
-         (format nil "-o~A" (print (ch-asdf:unix-name (car (output-files op c)))))
-         (ch-asdf:unix-name (print (component-pathname c))))))
+   "-Tpng"
+   (ch-asdf:unix-name (car (output-files op c)))
+   (ch-asdf:unix-name (component-pathname c))))
+
 
 
