@@ -147,7 +147,11 @@
 			      (module-components executable)))))
       (error 'operation-error :operation operation :component executable))))
 
-
+(defmethod component-depends-on ((op compile-op) (c unix-executable))
+  (append (call-next-method)
+          (mapcar #'(lambda (x)
+                      `(compile-op ,x))
+                  (source-files c))))
 
 ;;; if this goes into the standard asdf, it could reasonably be extended
 ;;; to allow cflags to be set somehow
@@ -169,7 +173,6 @@
 
 ;;;
 ;;; removed this bit here:
-;;; 
 ;;; #+nil "~{-isystem ~A~^ ~}"
 ;;; #+nil (mapcar #'unix-name (system-include-directories c))
 
@@ -190,12 +193,50 @@
 
 (defmethod perform ((op load-op) (c c-source-file)))
 
+;;; NASTY cut-and-paste job here!
+
+(defclass asm-source-file (source-file) ())
+
+(defmethod source-file-type ((c asm-source-file) (s module)) "s")
+
+(defmethod output-files ((op compile-op) (c asm-source-file))
+  (list 
+   (make-pathname :type "o" :defaults
+		  (component-pathname c))))
+
+(defgeneric get-include-directories (c))
+
+(defmethod get-include-directories ((c asm-source-file))
+  (when (and 
+         (slot-exists-p (component-parent c) 'include-directories)
+         (slot-boundp (component-parent c) 'include-directories))
+    (mapcar
+     #'unix-name
+     (include-directories
+      (component-parent c)))))
+
+(defmethod perform ((op compile-op) (c asm-source-file))
+  (unless
+      (= 0 (run-shell-command
+            (concatenate 'string
+                         (format nil "~A ~A -o ~S -c ~S"
+                                 *c-compiler*
+                                 (concatenate
+                                  'string
+                                  (format nil "~{-I~A~^ ~}" (get-include-directories c))
+                                  " " (sb-ext:posix-getenv "EXTRA_ASMFLAGS")
+                                  " -fPIC")
+                                 (unix-name (car (output-files op c)))
+                                 (unix-name (component-pathname c))))))
+    (error 'operation-error :operation op :component c)))
+
+(defmethod perform ((op load-op) (c asm-source-file)))
+
 (defmethod perform ((o load-op) (c unix-dso))
   (let ((co (make-instance 'compile-op)))
     (let ((filename (car (output-files co c))))
       #+cmu (ext:load-foreign filename)
       #+sbcl (sb-alien:load-shared-object filename))))
-
 
 ;;;; ASDF hackery for generating components, generated source files
 ;;;; and other neat stuff.
