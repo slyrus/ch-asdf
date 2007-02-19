@@ -153,6 +153,19 @@
                       `(compile-op ,x))
                   (source-files c))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; C Header Files
+(defclass c-header-file (source-file) ())
+
+(defmethod perform ((op compile-op) (c c-header-file)))
+
+(defmethod perform ((op load-op) (c c-header-file)))
+
+(defmethod source-file-type ((c c-header-file) (s module)) "h")
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; C Source Files
+
 ;;; if this goes into the standard asdf, it could reasonably be extended
 ;;; to allow cflags to be set somehow
 (defmethod output-files ((op compile-op) (c c-source-file))
@@ -180,7 +193,7 @@
   (unless
       (= 0 (run-shell-command
             (concatenate 'string
-                         (format nil "~A ~A -o ~S -c ~S"
+                         (format nil "~A -Wall ~A -o ~S -c ~S"
                                  *c-compiler*
                                  (concatenate
                                   'string
@@ -193,6 +206,10 @@
 
 (defmethod perform ((op load-op) (c c-source-file)))
 
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; ASM Source Files
+;;;
 ;;; NASTY cut-and-paste job here!
 
 (defclass asm-source-file (source-file) ())

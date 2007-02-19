@@ -5,6 +5,7 @@
   (:use #:cl #:asdf)
   (:export #:ch-cl-source-file
            #:ch-lisp-source-file
+           #:c-header-file
            #:asm-source-file
            
            #:unix-name
