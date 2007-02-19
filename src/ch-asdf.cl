@@ -189,12 +189,15 @@
 ;;; #+nil "~{-isystem ~A~^ ~}"
 ;;; #+nil (mapcar #'unix-name (system-include-directories c))
 
+(defparameter *c-compiler-options* "-Wall")
+
 (defmethod perform ((op compile-op) (c c-source-file))
   (unless
       (= 0 (run-shell-command
             (concatenate 'string
-                         (format nil "~A -Wall ~A -o ~S -c ~S"
+                         (format nil "~A ~A ~A -o ~S -c ~S"
                                  *c-compiler*
+                                 *c-compiler-options*
                                  (concatenate
                                   'string
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
