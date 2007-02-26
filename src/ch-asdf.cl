@@ -125,8 +125,9 @@
   (let ((executable-name (unix-name (car (output-files operation executable)))))
     (unless (zerop
 	     (run-shell-command
-	      "~A ~A -o ~S ~{~S ~}"
+	      "~A ~A ~A -o ~S ~{~S ~}"
               *c-compiler*
+              *c-compiler-options*
 	      (concatenate 'string
                            ;; This really should be specified as an initarg of the unix-executable
                            ;; rather than hard coded here!
