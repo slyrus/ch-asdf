@@ -30,6 +30,7 @@
            #:png-file
            #:tiff-file
 
+           #:generate-op
            #:generated-file
            #:generated-source-file
 

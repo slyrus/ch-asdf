@@ -6,6 +6,7 @@
 (in-package :ch-asdf)
 
 (defparameter *c-compiler* "gcc")
+(defparameter *c-compiler-options* "-Wall")
 
 (defclass clean-op (operation) ())
 
@@ -189,8 +190,6 @@
 ;;; removed this bit here:
 ;;; #+nil "~{-isystem ~A~^ ~}"
 ;;; #+nil (mapcar #'unix-name (system-include-directories c))
-
-(defparameter *c-compiler-options* "-Wall")
 
 (defmethod perform ((op compile-op) (c c-source-file))
   (unless
@@ -542,6 +541,14 @@
    "-Tpng"
    (ch-asdf:unix-name (car (output-files op c)))
    (ch-asdf:unix-name (component-pathname c))))
+
+
+;;; benchmarking stuff
+
+(defclass benchmark-op (operation) ())
+
+(defmethod perform ((operation benchmark-op) (c component))
+  (oos 'load-op c))
 
 
 
