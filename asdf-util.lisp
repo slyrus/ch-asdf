@@ -35,13 +35,6 @@
 (defun merge-asdf-path (name path)
   (merge-pathnames name (asdf-lookup-path path)))
 
-(defmacro with-component-directory ((component) &body body)
-  `(ch-util::with-current-directory
-       (make-pathname
-        :directory (pathname-directory
-                    (component-pathname ,component)))
-     ,@body))
-
 (flet ((asdf-op (op component) 
          (typecase component
            (string

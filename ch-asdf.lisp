@@ -72,6 +72,18 @@
                                  (t (butlast (pathname-directory dir))))
 		    :defaults dir))))
 
+(defparameter *extra-ld-flags*
+  #+sbcl (sb-ext:posix-getenv "EXTRA_LDFLAGS")
+  #-sbcl nil)
+
+(defparameter *extra-c-flags*
+  #+sbcl (sb-ext:posix-getenv "EXTRA_CFLAGS")
+  #-sbcl nil)
+
+(defparameter *extra-asm-flags*
+  #+sbcl (sb-ext:posix-getenv "EXTRA_ASMFLAGS")
+  #-sbcl nil)
+
 (defmethod perform :after ((operation compile-op) (dso unix-dso))
   (let ((dso-name (unix-name (car (output-files operation dso)))))
     (unless (zerop
@@ -82,7 +94,7 @@
                            ;; This really should be specified as an initarg of the unix-dso
                            ;; rather than hard coded here!
                            ;; e.g. :components (... (:unix-library "R" :library-directory *r-dir*))
-			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
+			   *extra-ld-flags*
 			   " "
                            (format nil " ~{-L~A~^ ~} " (link-library-directories dso))
                            #-darwin
@@ -133,7 +145,7 @@
                            ;; This really should be specified as an initarg of the unix-executable
                            ;; rather than hard coded here!
                            ;; e.g. :components (... (:unix-library "R" :library-directory *r-dir*))
-			   (sb-ext:posix-getenv "EXTRA_LDFLAGS")
+			   *extra-ld-flags*
 			   " "
                            (format nil " ~{-L~A~^ ~} " (link-library-directories executable))
                            #-darwin
@@ -156,6 +168,10 @@
                   (source-files c))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; for C Header Files and ASM Files
+(defgeneric get-include-directories (c))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; C Header Files
 (defclass c-header-file (source-file) ())
 
@@ -174,8 +190,6 @@
   (list 
    (make-pathname :type "o" :defaults
 		  (component-pathname c))))
-
-(defgeneric get-include-directories (c))
 
 (defmethod get-include-directories ((c c-source-file))
   (when (and 
@@ -201,7 +215,7 @@
                                  (concatenate
                                   'string
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
-                                  " " (sb-ext:posix-getenv "EXTRA_CFLAGS")
+                                  " " *extra-c-flags*
                                   " -fPIC")
                                  (unix-name (car (output-files op c)))
                                  (unix-name (component-pathname c))))))
@@ -224,8 +238,6 @@
    (make-pathname :type "o" :defaults
 		  (component-pathname c))))
 
-(defgeneric get-include-directories (c))
-
 (defmethod get-include-directories ((c asm-source-file))
   (when (and 
          (slot-exists-p (component-parent c) 'include-directories)
@@ -244,7 +256,7 @@
                                  (concatenate
                                   'string
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
-                                  " " (sb-ext:posix-getenv "EXTRA_ASMFLAGS")
+                                  " " *extra-asm-flags*
                                   " -fPIC")
                                  (unix-name (car (output-files op c)))
                                  (unix-name (component-pathname c))))))
@@ -324,7 +336,7 @@
 (defmethod perform ((operation compile-op) (c pdf-file)))
 
 (defmethod perform ((operation load-op) (c pdf-file))
-  (ch-util::app-open (unix-name (component-pathname c))))
+  (ch-util::pdf-open (unix-name (component-pathname c))))
 
 (defmethod operation-done-p ((o load-op) (c pdf-file))
   nil)
@@ -517,8 +529,8 @@
 
 (defparameter *dot-program* "dot")
 (defparameter *dot-program-path*
-  (let ((found (sb-ext:find-executable-in-search-path
-                *dot-program*)))
+  (let ((found #+sbcl (sb-ext:find-executable-in-search-path
+                       *dot-program*)))
     (unless found
       (setf found 
             #+darwin "/opt/local/bin/dot"
