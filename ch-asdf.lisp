@@ -414,7 +414,8 @@
 (defmethod perform ((op compile-op) (c object-component)))
 (defmethod perform ((op load-op) (c object-component))
   (setf (component-property c 'last-loaded)
-        (get-universal-time)))
+        (get-universal-time))
+  (call-next-method))
 
 (defmethod operation-done-p ((o compile-op) (c object-component))
   t)
@@ -511,7 +512,8 @@
 
 (defmethod perform ((op load-op) (c object-from-variable))
     (setf (asdf:component-property c 'last-loaded)
-        (get-universal-time)))
+        (get-universal-time))
+    (call-next-method))
 
 (defclass load-only-file-mixin ()
    ())
@@ -561,6 +563,4 @@
 
 (defmethod perform ((operation benchmark-op) (c component))
   (oos 'load-op c))
-
-
 
