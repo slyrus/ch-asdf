@@ -412,10 +412,10 @@
             (make-symbol-from-name (asdf::component-name c))))))
 
 (defmethod perform ((op compile-op) (c object-component)))
+
 (defmethod perform ((op load-op) (c object-component))
   (setf (component-property c 'last-loaded)
-        (get-universal-time))
-  (call-next-method))
+        (get-universal-time)))
 
 (defmethod operation-done-p ((o compile-op) (c object-component))
   t)
@@ -433,13 +433,12 @@
 (defclass object-from-file (object-component source-file)
   ((load-date :accessor object-load-date :initarg :load-date)))
 
-(defmethod perform ((op compile-op) (c object-from-file))
-  (setf (asdf:component-property c 'last-compiled)
-        (get-universal-time))
+(defmethod perform ((op compile-op) (c object-from-file)))
+
+(defmethod perform ((op load-op) (c object-from-file))
   (with-open-file (input-stream (component-pathname c))
     (setf (symbol-value (object-symbol c))
-          (read input-stream)))
-  (call-next-method))
+          (read input-stream))))
 
 (defmethod perform ((op generate-op) (c object-from-file))
   (setf (asdf::component-property c 'last-generated)
