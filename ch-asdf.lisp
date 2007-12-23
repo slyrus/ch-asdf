@@ -529,14 +529,6 @@
 ;;; graphviz dot-files
 
 (defparameter *dot-program* "dot")
-(defparameter *dot-program-path*
-  (let ((found #+sbcl (sb-ext:find-executable-in-search-path
-                       *dot-program*)))
-    (unless found
-      (setf found 
-            #+darwin "/opt/local/bin/dot"
-            #-darwin "/usr/local/bin/dot"))
-    found))
 
 (defclass graphviz-dot-file (generated-source-file) ())
 
@@ -550,7 +542,7 @@
 (defmethod perform ((op compile-op) (c graphviz-dot-file))
   (run-shell-command
    "~A ~A -o~A ~A"
-   *dot-program-path*
+   *dot-program*
    "-Tpng"
    (ch-asdf:unix-name (car (output-files op c)))
    (ch-asdf:unix-name (component-pathname c))))
