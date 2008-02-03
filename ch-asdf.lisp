@@ -47,7 +47,8 @@
    (dso-type :accessor dso-type :initarg :dso-type :initform
              ;; fill appropriate OS specific types in here
              #+darwin "so"
-             #-darwin "so")))
+             #-darwin "so")
+   (auto-load :accessor dso-auto-load :initarg :auto-load :initform t)))
 
 (defmethod input-files ((operation compile-op) (dso unix-dso))
   (mapcar #'component-pathname (module-components dso)))
@@ -69,7 +70,7 @@
                                  ((and (slot-boundp dso 'dso-name)
                                        (absolute-path-p (dso-name dso)))
                                   nil)
-                                 (t (butlast (pathname-directory dir))))
+                                 (t (pathname-directory dir)))
 		    :defaults dir))))
 
 (defparameter *extra-ld-flags*
@@ -265,10 +266,11 @@
 (defmethod perform ((op load-op) (c asm-source-file)))
 
 (defmethod perform ((o load-op) (c unix-dso))
-  (let ((co (make-instance 'compile-op)))
-    (let ((filename (car (output-files co c))))
-      #+cmu (ext:load-foreign filename)
-      #+sbcl (sb-alien:load-shared-object filename))))
+  (when (dso-auto-load c)
+    (let ((co (make-instance 'compile-op)))
+      (let ((filename (car (output-files co c))))
+        #+cmu (ext:load-foreign filename)
+        #+sbcl (sb-alien:load-shared-object (truename filename))))))
 
 ;;;; ASDF hackery for generating components, generated source files
 ;;;; and other neat stuff.
