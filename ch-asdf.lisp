@@ -13,28 +13,6 @@
 (defmethod perform ((operation clean-op) (c component))
   nil)
 
-(defclass ch-cl-source-file (cl-source-file) ())
-
-(defparameter *fasl-directory*
-  (make-pathname :directory '(:relative #+sbcl "sbcl-fasl"
-			      #+openmcl "openmcl-fasl"
-			      #-(or sbcl openmcl) "fasl")))
-
-(defmethod source-file-type ((c ch-cl-source-file) (s module)) "cl")
-
-(defmethod output-files :around ((operation compile-op) (c ch-cl-source-file))
-  (list (merge-pathnames *fasl-directory* (compile-file-pathname (component-pathname c)))))
-
-(defclass ch-lisp-source-file (cl-source-file) ())
-
-(defparameter *fasl-directory*
-  (make-pathname :directory '(:relative #+sbcl "sbcl-fasl"
-			      #+openmcl "openmcl-fasl"
-			      #-(or sbcl openmcl) "fasl")))
-
-(defmethod output-files :around ((operation compile-op) (c ch-lisp-source-file))
-  (list (merge-pathnames *fasl-directory* (compile-file-pathname (component-pathname c)))))
-
 ;;;; C source file compilation section
 ;;;; ripped from sb-posix.asd in the sbcl source code
 
