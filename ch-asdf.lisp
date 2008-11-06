@@ -16,6 +16,12 @@
 ;;;; C source file compilation section
 ;;;; ripped from sb-posix.asd in the sbcl source code
 
+(defun unix-name (pathname)
+  (namestring 
+   (typecase pathname
+     (logical-pathname (translate-logical-pathname pathname))
+     (t pathname))))
+
 (defclass unix-dso (module)
   ((dso-name :accessor dso-name :initarg :dso-name)
    (dso-directory :accessor dso-directory :initarg :dso-directory)
@@ -27,6 +33,13 @@
              #+darwin "so"
              #-darwin "so")
    (auto-load :accessor dso-auto-load :initarg :auto-load :initform t)))
+
+(defgeneric dso-pathname (dso)
+  (:method ((dso unix-dso))
+    (unix-name
+     (merge-pathnames (make-pathname :type (dso-type dso))
+                      (merge-pathnames (dso-name dso)
+                                       (asdf:component-pathname dso))))))
 
 (defmethod input-files ((operation compile-op) (dso unix-dso))
   (mapcar #'component-pathname (module-components dso)))
@@ -315,8 +328,31 @@
 
 (defmethod perform ((operation compile-op) (c pdf-file)))
 
+(defun app-open (&rest args)
+  #+(and darwin sbcl)
+  (sb-ext::run-program "/usr/bin/open"
+                       (mapcar #'(lambda (x)
+                                   (if (pathnamep x)
+                                       (unix-name x)
+                                       x))
+                               args)))
+
+(defparameter *pdf-viewer*
+  #+linux "kpdf"
+  #+darwin "/Applications/Preview.app"
+  #-(or linux darwin) nil)
+
+(defun pdf-open (&rest args)
+  (when *pdf-viewer*
+    #+darwin
+    (apply #'app-open "-a" *pdf-viewer* (mapcar #'unix-name args))
+    #-darwin
+    (run-program-asynchronously *pdf-viewer* 
+                                (mapcar #'(lambda (x)
+                                            (if (pathnamep x) (unix-name x) x)) args))))
+
 (defmethod perform ((operation load-op) (c pdf-file))
-  (ch-util::pdf-open (unix-name (component-pathname c))))
+  (pdf-open (unix-name (component-pathname c))))
 
 (defmethod operation-done-p ((o load-op) (c pdf-file))
   nil)

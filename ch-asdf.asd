@@ -8,7 +8,7 @@
   :version #.(with-open-file
                  (vers (merge-pathnames "version.lisp-expr" *load-truename*))
                (read vers))
-  :depends-on (:ch-util :puri)
+  :depends-on (:puri)
   :licence "BSD"
   :description "ASDF Extensions from Cyrus Harmon"
   :components
