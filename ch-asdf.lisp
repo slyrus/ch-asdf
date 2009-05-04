@@ -323,7 +323,7 @@
 
 ;;; pdf files
 
-(defclass pdf-file (source-file) ())
+(defclass pdf-file (generated-file) ())
 (defmethod source-file-type ((c pdf-file) (s module)) "pdf")
 
 (defmethod perform ((operation compile-op) (c pdf-file)))
