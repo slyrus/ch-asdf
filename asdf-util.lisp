@@ -38,8 +38,8 @@
 (flet ((asdf-op (op component) 
          (typecase component
            (string
-            (asdf:operate 'asdf:load-op (asdf-lookup component)))
-           (t (asdf:operate 'asdf:load-op component)))))
+            (asdf:operate op (asdf-lookup component)))
+           (t (asdf:operate op component)))))
   (defun asdf-load (component)
     (asdf-op 'asdf:load-op component))
   (defun asdf-compile (component)

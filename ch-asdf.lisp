@@ -16,12 +16,6 @@
 ;;;; C source file compilation section
 ;;;; ripped from sb-posix.asd in the sbcl source code
 
-(defun unix-name (pathname)
-  (namestring 
-   (typecase pathname
-     (logical-pathname (translate-logical-pathname pathname))
-     (t pathname))))
-
 (defclass unix-dso (module)
   ((dso-name :accessor dso-name :initarg :dso-name)
    (dso-directory :accessor dso-directory :initarg :dso-directory)

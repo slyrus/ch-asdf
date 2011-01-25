@@ -1,8 +1,5 @@
 
-(defpackage #:ch-asdf-system (:use #:asdf #:cl))
-(in-package #:ch-asdf-system)
-
-(defsystem #:ch-asdf
+(asdf:defsystem #:ch-asdf
   :name "ch-asdf"
   :author "Cyrus Harmon <ch-lisp@bobobeach.com>"
   :version #.(with-open-file
