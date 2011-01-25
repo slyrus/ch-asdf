@@ -46,8 +46,12 @@
 
            #:object-component
            #:object-from-variable
+           #:object-input-object
            #:object-from-file
            #:object-to-file
+           #:object-symbol
 
-           #:graphviz-dot-file))
+           #:graphviz-dot-file
+           
+           #:last-loaded))
 

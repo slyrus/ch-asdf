@@ -30,7 +30,7 @@
 
 (defgeneric dso-pathname (dso)
   (:method ((dso unix-dso))
-    (unix-name
+    (namestring
      (merge-pathnames (make-pathname :type (dso-type dso))
                       (merge-pathnames (dso-name dso)
                                        (asdf:component-pathname dso))))))
@@ -71,7 +71,7 @@
   #-sbcl nil)
 
 (defmethod perform :after ((operation compile-op) (dso unix-dso))
-  (let ((dso-name (unix-name (car (output-files operation dso)))))
+  (let ((dso-name (namestring (car (output-files operation dso)))))
     (unless (zerop
 	     (run-shell-command
 	      "~A ~A -o ~S ~{~S ~}"
@@ -90,7 +90,7 @@
 			   #+darwin " -bundle "
 			   #-(or darwin sunos) " -shared ")
 	      dso-name
-	      (mapcar #'unix-name
+	      (mapcar #'namestring
 		      (mapcan (lambda (c)
 				(output-files operation c))
 			      (module-components dso)))))
@@ -110,7 +110,7 @@
          (mapcan #'(lambda (obj)
                      (output-files operation (get-sibling-component executable obj)))
                  (source-files executable))))
-    (append (mapcar #'unix-name files)
+    (append (mapcar #'namestring files)
             (mapcar #'component-pathname (module-components executable)))))
 
 (defmethod output-files ((operation compile-op) (executable unix-executable))
@@ -121,7 +121,7 @@
   nil)
 
 (defmethod perform :after ((operation compile-op) (executable unix-executable))
-  (let ((executable-name (unix-name (car (output-files operation executable)))))
+  (let ((executable-name (namestring (car (output-files operation executable)))))
     (unless (zerop
 	     (run-shell-command
 	      "~A ~A ~A -o ~S ~{~S ~}"
@@ -141,7 +141,7 @@
 	      executable-name
               nil
               #+nil
-	      (mapcar #'unix-name
+	      (mapcar #'namestring
 		      (mapcan (lambda (c)
 				(output-files operation c))
 			      (module-components executable)))))
@@ -182,14 +182,14 @@
          (slot-exists-p (component-parent c) 'include-directories)
          (slot-boundp (component-parent c) 'include-directories))
     (mapcar
-     #'unix-name
+     #'namestring
      (include-directories
       (component-parent c)))))
 
 ;;;
 ;;; removed this bit here:
 ;;; #+nil "~{-isystem ~A~^ ~}"
-;;; #+nil (mapcar #'unix-name (system-include-directories c))
+;;; #+nil (mapcar #'namestring (system-include-directories c))
 
 (defmethod perform ((op compile-op) (c c-source-file))
   (unless
@@ -203,8 +203,8 @@
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
                                   " " *extra-c-flags*
                                   " -fPIC")
-                                 (unix-name (car (output-files op c)))
-                                 (unix-name (component-pathname c))))))
+                                 (namestring (car (output-files op c)))
+                                 (namestring (component-pathname c))))))
     (error 'operation-error :operation op :component c)))
 
 (defmethod perform ((op load-op) (c c-source-file)))
@@ -229,7 +229,7 @@
          (slot-exists-p (component-parent c) 'include-directories)
          (slot-boundp (component-parent c) 'include-directories))
     (mapcar
-     #'unix-name
+     #'namestring
      (include-directories
       (component-parent c)))))
 
@@ -244,8 +244,8 @@
                                   (format nil "~{-I~A~^ ~}" (get-include-directories c))
                                   " " *extra-asm-flags*
                                   " -fPIC")
-                                 (unix-name (car (output-files op c)))
-                                 (unix-name (component-pathname c))))))
+                                 (namestring (car (output-files op c)))
+                                 (namestring (component-pathname c))))))
     (error 'operation-error :operation op :component c)))
 
 (defmethod perform ((op load-op) (c asm-source-file)))
@@ -327,7 +327,7 @@
   (sb-ext::run-program "/usr/bin/open"
                        (mapcar #'(lambda (x)
                                    (if (pathnamep x)
-                                       (unix-name x)
+                                       (namestring x)
                                        x))
                                args)))
 
@@ -339,14 +339,14 @@
 (defun pdf-open (&rest args)
   (when *pdf-viewer*
     #+darwin
-    (apply #'app-open "-a" *pdf-viewer* (mapcar #'unix-name args))
+    (apply #'app-open "-a" *pdf-viewer* (mapcar #'namestring args))
     #-darwin
     (run-program-asynchronously *pdf-viewer* 
                                 (mapcar #'(lambda (x)
-                                            (if (pathnamep x) (unix-name x) x)) args))))
+                                            (if (pathnamep x) (namestring x) x)) args))))
 
 (defmethod perform ((operation load-op) (c pdf-file))
-  (pdf-open (unix-name (component-pathname c))))
+  (pdf-open (namestring (component-pathname c))))
 
 (defmethod operation-done-p ((o load-op) (c pdf-file))
   nil)
@@ -554,8 +554,8 @@
    "~A ~A -o~A ~A"
    *dot-program*
    "-Tpng"
-   (ch-asdf:unix-name (car (output-files op c)))
-   (ch-asdf:unix-name (component-pathname c))))
+   (namestring (car (output-files op c)))
+   (unix-name (component-pathname c))))
 
 
 ;;; benchmarking stuff
