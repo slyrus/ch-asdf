@@ -291,7 +291,7 @@
 ;;; generated-component.
 (defclass generated-file (generated-component source-file) ())
 
-(defmethod asdf::component-relative-pathname ((component generated-file))
+(defmethod asdf:component-relative-pathname ((component generated-file))
   (let ((relative-pathname (slot-value component 'asdf::relative-pathname)))
     (if relative-pathname
         relative-pathname
@@ -324,7 +324,7 @@
 
 (defun app-open (&rest args)
   #+(and darwin sbcl)
-  (sb-ext::run-program "/usr/bin/open"
+  (sb-ext:run-program "/usr/bin/open"
                        (mapcar #'(lambda (x)
                                    (if (pathnamep x)
                                        (namestring x)
@@ -399,7 +399,7 @@
 
 (defun get-sibling-component (comp sib)
   (asdf:find-component (asdf:component-parent comp)
-                       (asdf::coerce-name sib)))
+                       (asdf:coerce-name sib)))
 
 (defclass object-component (generated-component)
   ((symbol :accessor object-symbol :initarg :symbol)))
@@ -419,7 +419,7 @@
   (when (slot-boundp c 'asdf::name)
     (unless (slot-boundp c 'symbol)
       (setf (object-symbol c)
-            (make-symbol-from-name (asdf::component-name c))))))
+            (make-symbol-from-name (asdf:component-name c))))))
 
 (defmethod perform ((op compile-op) (c object-component)))
 
@@ -433,8 +433,8 @@
 (defmethod operation-done-p ((o load-op) (comp object-component))
   (every #'identity
          (loop for (dep-op dep-comp) in
-              (asdf::component-depends-on o comp)
-              collect (asdf::operation-done-p
+              (asdf:component-depends-on o comp)
+              collect (asdf:operation-done-p
                        (make-instance dep-op)
                        (get-sibling-component comp dep-comp)))))
 
@@ -451,14 +451,14 @@
           (read input-stream))))
 
 (defmethod perform ((op generate-op) (c object-from-file))
-  (setf (asdf::component-property c 'last-generated)
+  (setf (asdf:component-property c 'last-generated)
         (get-universal-time)))
 
 ;;; this needs to check the file date!!!!
 (defmethod operation-done-p ((o generate-op) (c object-from-file))
   (let ((on-disk-time
          (file-write-date (component-pathname c)))
-        (my-last-load-time (asdf::component-property c 'last-loaded)))
+        (my-last-load-time (asdf:component-property c 'last-loaded)))
     (and on-disk-time
          my-last-load-time
          (>= my-last-load-time on-disk-time))))
@@ -473,33 +473,33 @@
 
 (defmethod component-depends-on ((op generate-op) (c object-from-variable))
   (append (call-next-method)
-          `((load-op , (asdf::coerce-name (object-input-object c))))))
+          `((load-op , (asdf:coerce-name (object-input-object c))))))
 
 (defmethod component-depends-on ((op compile-op) (c object-from-variable))
   (append (call-next-method)
-          `((load-op ,(asdf::coerce-name (object-input-object c))))))
+          `((load-op ,(asdf:coerce-name (object-input-object c))))))
 
 (defmethod operation-done-p ((o generate-op) (c object-from-variable))
   (let ((input-object-last-load-time
-         (asdf::component-property
+         (asdf:component-property
           (find-component (component-parent c)
-                          (asdf::coerce-name (object-input-object c)))
+                          (asdf:coerce-name (object-input-object c)))
           'last-loaded))
-        (my-last-generate-time (asdf::component-property c 'last-generated)))
+        (my-last-generate-time (asdf:component-property c 'last-generated)))
     (and input-object-last-load-time
          my-last-generate-time
          (>= my-last-generate-time input-object-last-load-time))))
 
 (defmethod operation-done-p ((o compile-op) (c object-from-variable))
-  (let ((my-last-generate-time (asdf::component-property c 'last-generated))
-        (my-last-compile-time (asdf::component-property c 'last-compiled)))
+  (let ((my-last-generate-time (asdf:component-property c 'last-generated))
+        (my-last-compile-time (asdf:component-property c 'last-compiled)))
     (and my-last-generate-time
          my-last-compile-time
          (>= my-last-compile-time my-last-generate-time))))
 
 (defmethod operation-done-p ((o load-op) (c object-from-variable))
-  (let ((my-last-compile-time (asdf::component-property c 'last-compiled))
-        (my-last-load-time (asdf::component-property c 'last-loaded)))
+  (let ((my-last-compile-time (asdf:component-property c 'last-compiled))
+        (my-last-load-time (asdf:component-property c 'last-loaded)))
     (and my-last-compile-time
          my-last-load-time
          (>= my-last-load-time my-last-compile-time))))
@@ -511,7 +511,7 @@
        (symbol-value
         (object-symbol
          (find-component (component-parent c)
-                         (asdf::coerce-name (object-input-object c)))))))
+                         (asdf:coerce-name (object-input-object c)))))))
   (setf (symbol-value (object-symbol c)) sexp)))
 
 
