@@ -550,7 +550,7 @@
                     (compile-file-pathname (component-pathname c)))))
 
 (defmethod perform ((op compile-op) (c graphviz-dot-file))
-  (run-shell-command
+  (uiop:run-program
    "~A ~A -o~A ~A"
    *dot-program*
    "-Tpng"
